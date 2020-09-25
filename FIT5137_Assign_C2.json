@@ -1,0 +1,116 @@
+***Q1***
+
+db.host.updateOne(
+{hostName: "Adam"},
+{
+	$addToSet: { "hostVerifications": "facebook" }
+}
+);
+
+
+
+
+***Q2***
+
+db.host.insertMany([
+{
+hostId: "MONHOS11",
+hostName: "Alison",
+hostVerifications: ["email", "phone", "facebook", "reviews"],
+hostSince: new Date("2019/01/09"),
+hostLocation: {suburb: "Caulfield", state: "Victoria", country: "Australia"},
+hostResponseRate: "within an hour",
+hostIsSuperhost: false
+},
+{
+hostId: "MONHOS12",
+hostName: "Mike",
+hostVerifications: ["email", "phone"],
+hostSince: new Date("2019/01/09"),
+hostLocation: {suburb: "Clayton", state: "Victoria", country: "Australia"},
+hostResponseRate: "within a day",
+hostIsSuperhost: true
+},
+{
+hostId: "MONHOS13",
+hostName: "Robyn",
+hostVerifications: ["facebook", "reviews"],
+hostSince: new Date("2019/01/09"),
+hostLocation: {suburb: "Berwick", state: "Victoria", country: "Australia"},
+hostResponseRate: "within an hour",
+hostIsSuperhost: false
+},
+{
+hostId: "MONHOS14",
+hostName: "Daniel",
+hostVerifications: ["email", "manual offline", "work email"],
+hostSince: new Date("2019/01/09"),
+hostLocation: {suburb: "Frankston", state: "Victoria", country: "Australia"},
+hostResponseRate: "within a day",
+hostIsSuperhost: true
+},
+{
+hostId: "MONHOS15",
+hostName: "Ron",
+hostVerifications: ["facebook"],
+hostSince: new Date("2019/01/09"),
+hostLocation: {suburb: "Caulfield", state: "Victoria", country: "Australia"},
+hostResponseRate: "within a day",
+hostIsSuperhost: false
+}
+]);
+
+
+
+
+***Q3***
+
+db.host.updateMany(
+{"hostResponseRate": "within an hour"},
+{
+  $set: {"hostIsSuperhost": true}
+}
+);
+
+
+
+
+***Q4***
+
+db.listing.deleteMany(
+	{"availabilityPer365Days": 0}
+)
+
+
+
+
+***Q5***
+
+db.listing.updateOne(
+{ neighbourhood: "Monash" },
+{
+  $set: { "neighbourhood": "Monash City" }
+}
+);
+
+
+
+
+***Q6***
+
+UPDATE review SET satisfied_reason = {'space', 'price'} 
+WHERE review_id = 'REV11' AND listing_id = 'MONLST09' AND reviewer_id = 500011;
+
+
+
+
+***Q7***
+
+CREATE INDEX ON review (reviewer_id);
+
+SELECT review_id, listing_id FROM review WHERE reviewer_id = 500015;
+
+DELETE from review 
+WHERE review_id = 'REV15' 
+AND listing_id = 'MONLST13' 
+AND reviewer_id = 500015;
