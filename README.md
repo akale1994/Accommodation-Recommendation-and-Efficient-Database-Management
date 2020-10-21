@@ -17,6 +17,8 @@ git clone https://github.com/akale1994/Accommodation-Recommendation-and-Efficien
 * Install the 3 databases in your system with the help of the installation guides below<br>
 [Windows - Installation Guide](https://github.com/akale1994/Accommodation-Recommendation-and-Efficient-Database-Management/blob/master/Installation%20Guides/Windows_InstallationGuide.pdf)<br>
 [Mac - Installation Guide](https://github.com/akale1994/Accommodation-Recommendation-and-Efficient-Database-Management/blob/master/Installation%20Guides/Mac_InstallationGuide.pdf)<br><br>
+<i>Do not forget to add the required environment variables after the installations.</i>
+<br><br>
 * Open and run the respective files in the respective database placed in the individual folders
 ```
 Root directory > MongoDB / Cassandra / Neo4j
