@@ -1,0 +1,363 @@
+mongoimport --db FIT5137_Assign_C3 --collection host --file "C:\Users\Kale\Documents\Abhilash\Monash - MBIS_C6003\Sem II\FIT5137_ADB\Assignment 1\assignment_data\host.json"
+
+
+mongoimport --db FIT5137_Assign_C3 --collection listing --file "C:\Users\Kale\Documents\Abhilash\Monash - MBIS_C6003\Sem II\FIT5137_ADB\Assignment 1\assignment_data\listing.json"
+
+
+db.listing.aggregate( [
+	{ $lookup: { from: "host", localField: "host_id", foreignField: "host_id", as: "hostDocs" } },
+	{ $out : "listing_host" }
+] );
+
+
+
+
+***INDICES***
+
+
+***Referencing***
+
+db.listing.createIndex( { room_type: 1 } );
+db.listing.createIndex( { neighbourhood: 1, price: -1} );
+db.host.createIndex( {host_name: 1} );
+
+
+***Embedding***
+
+db.listing_host.createIndex( { room_type: 1 } );
+db.listing_host.createIndex( { neighbourhood: 1, price: -1} );
+db.listing_host.createIndex( { "hostDocs.host_name": 1} );
+
+
+
+
+***Q1 - Referencing***
+
+db.listing.count( {
+	$and: [
+	{ last_review: { $gte: new Date("2018-12-01") } },
+	{ last_review: { $lte: new Date("2018-12-31") } }
+	]
+} );
+
+
+***Q1 - Embedding***
+
+db.listing_host.count( {
+	$and: [
+	{ last_review: { $gte: new Date( "2018-12-01" ) } },
+	{ last_review: { $lte: new Date( "2018-12-31" ) } }
+	]
+} );
+
+
+
+
+***Q2 - Referencing***
+
+db.listing.aggregate( [
+	{ $match: { neighbourhood: "Port Phillip" } },
+	{ $group: { _id: "$neighbourhood", avgPrice: { $avg: "$price" } } },
+	{ $project: {_id: 0, neighbourhood: "$_id", avgPrice: "$avgPrice" } }
+] );
+
+
+***Q2 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $match: { neighbourhood: "Port Phillip" } },
+	{ $group: { _id: "$neighbourhood", avgPrice: { $avg: "$price" } } },
+	{ $project: {_id: 0, neighbourhood: "$_id", avgPrice: "$avgPrice" } }
+] );
+
+
+
+
+***Q3 - Referencing***
+
+db.listing.aggregate( [
+	{ $group: { _id : "$neighbourhood" } },
+	{ $project: { _id: 0, neighbourhood: "$_id" } },
+	{ $sort: { "reviews_per_month" : -1 } },
+	{ $limit: 10 }
+] ).pretty();
+
+
+***Q3 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $group: { _id : "$neighbourhood" } },
+	{ $project: { _id: 0, neighbourhood: "$_id" } },
+	{ $sort: { "reviews_per_month" : -1 } },
+	{ $limit: 10 }
+] ).pretty();
+
+
+
+
+***Q4 - Referencing***
+
+db.listing.aggregate( [
+	{ $group: { _id: null, minReviews: { $min: "$number_of_reviews" }, maxReviews: { $max: "$number_of_reviews" } } }, 
+	{ $project: { _id: 0, minReviews: 1, maxReviews: 1, rangeOfNumberOfReviews: { $subtract: [ "$maxReviews", "$minReviews" ] } } }
+] );
+
+
+***Q4 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $group: { _id: null, minReviews: { $min: "$number_of_reviews" }, maxReviews: { $max: "$number_of_reviews" } } }, 
+	{ $project: { _id: 0, minReviews: 1, maxReviews: 1, rangeOfNumberOfReviews: { $subtract: [ "$maxReviews", "$minReviews" ] } } }
+] );
+
+
+
+
+***Q5 - Referencing***
+
+db.listing.aggregate( [
+	{ $group : { _id : "$room_type", numberOfOccurrence: { $sum: 1 } } },
+	{ $project: { _id: 0, roomType: "$_id", numberOfOccurrence: "$numberOfOccurrence" } },
+	{ $sort : { numberOfOccurrence : -1 } },
+	{ $limit : 1 }
+] );
+
+
+***Q5 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $group : { _id : "$room_type", numberOfOccurrence: { $sum: 1 } } },
+	{ $project: { _id: 0, roomType: "$_id", numberOfOccurrence: "$numberOfOccurrence" } },
+	{ $sort : { numberOfOccurrence : -1 } },
+	{ $limit : 1 }
+] );
+
+
+
+
+***Q6 - Referencing***
+
+db.listing.aggregate( [
+	{ $project: { _id: 0} },
+	{ $sort : { price : -1 } },
+	{ $limit : 5 }
+] ).pretty();
+
+
+***Q6 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $project: { _id: 0, hostDocs: 0 } },
+	{ $sort : { price : -1 } },
+	{ $limit : 5 }
+] ).pretty();
+
+
+
+
+***Q7 - Referencing***
+
+db.host.aggregate( [
+	{ $lookup : { from : "listing", localField : "host_id", foreignField : "host_id", as : "listingDocs" } },
+	{ $match: { host_name: "Eleni" } },
+	{ $project: { _id: 0, host_name: 1, listingDocs: 1 } }
+] ).pretty();
+
+
+***Q7 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $unwind: "$hostDocs" },
+	{ $match: { "hostDocs.host_name": "Eleni" } },
+	{ $project: { _id: 0, hostDocs: 0 } }
+] ).pretty();
+
+
+
+***Q8 - Referencing***
+
+db.host.aggregate( [
+	{ $lookup: { from: "listing", localField: "host_id", foreignField: "host_id", as: "listingDocs" } },
+	{ $match: { $and: [ { "listingDocs.room_type": "Entire home/apt", host_response_time: "within a few hours" } ] } }, 
+	{ $project: { _id: 0, host_response_time: 1, listingDocs: 1 } }
+] ).pretty();
+
+
+***Q8 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $unwind: "$hostDocs" },
+	{ $match: { $and: [ { room_type: "Entire home/apt", "hostDocs.host_response_time": "within a few hours" } ] } }, 
+	{ $project: { _id: 0, hostDocs: 0 } }
+] ).pretty();
+
+
+
+
+***Q9 - Referencing***
+
+db.host.aggregate( [
+	{ $lookup: { from: "listing", localField: "host_id", foreignField: "host_id", as: "listingDocs" } },
+	{ $match: { $and: [ { host_name: "Colin" }, { "listingDocs.amenities": { $regex: "Internet" } }, { "listingDocs.amenities": { $regex: "Gym" } } ] } },
+	{ $project: { _id: 0, host_name: 1, listingDocs: 1 } }
+] ).pretty();
+
+
+***Q9 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $unwind: "$hostDocs" },
+	{ $match: { $and: [ { "hostDocs.host_name": "Colin" }, { amenities: { $regex: "Internet" } }, { amenities: { $regex: "Gym" } } ] } },
+	{ $project: { _id: 0, hostDocs: 0 } }
+] ).pretty();
+
+
+
+
+***Q10 - Referencing***
+
+db.listing.aggregate( [
+	{ $match: { $and: [ {street: { $regex: "Clayton" }, name: { $regex: "Beautiful" } } ] } },
+	{ $project: { _id: 0, price: 1, room_type: 1 } }
+] ).pretty();
+
+
+***Q10 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $match: { $and: [ { street: { $regex: "Clayton" }, name: { $regex: "Beautiful" } } ] } },
+	{ $project: { _id: 0, price: 1, room_type: 1 } }
+] ).pretty();
+
+
+
+
+***Q11 - Referencing***
+
+db.listing.aggregate( [
+	{ $project: { _id: 0, listingDetails: { $concat: [ "$name", ", ", { $rtrim: { input: "$street", chars: ", Australia"} }, ", ", { $substr: [ "$zipcode", 0, -1 ] }, ", ", "$neighbourhood" ] } } },
+	{ $sort: { "listingDetails": 1 } }
+] );
+
+
+***Q11 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $project: { _id: 0, listingDetails: { $concat: [ "$name", ", ", { $rtrim: { input: "$street", chars: ", Australia"} }, ", ", { $substr: [ "$zipcode", 0, -1 ] }, ", ", "$neighbourhood" ] } } },
+	{ $sort: { "listingDetails": 1 } }
+] );
+
+
+
+
+***Q12 - Referencing***
+
+db.listing.aggregate( [
+	{ $sort: { availability_365 : -1 } },
+	{ $project: { _id: 0, listingID: "$id", listingName: "$name", roomType: "$room_type", availabilityInDays: "$availability_365" } },
+	{ $addFields: { reportGenerationTime: new Date() } },
+	{ $limit: 1 }
+] ).pretty();
+
+
+***Q12 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $sort: { availability_365 : -1 } },
+	{ $project: { _id: 0, listingID: "$id", listingName: "$name", roomType: "$room_type", availabilityInDays: "$availability_365" } },
+	{ $addFields: { reportGenerationTime: new Date() } },
+	{ $limit: 1 }
+] ).pretty();
+
+
+
+
+***Q13 - Referencing***
+
+db.listing.aggregate( [
+	{ $match: { price: { $gt: 50 } } },
+	{ $group: { _id: "$neighbourhood", prices: { $push: "$price" } } },
+	{ $project: { _id: 0, neighbourhood: "$_id", prices: "$prices" } },
+	{ $sort: { neighbourhood: -1 } }
+] );
+
+
+***Q13 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $match: { price: { $gt: 50 } } },
+	{ $group: { _id: "$neighbourhood", prices: { $push: "$price" } } },
+	{ $project: { _id: 0, neighbourhood: "$_id", prices: "$prices" } },
+	{ $sort: { neighbourhood: -1 } }
+] );
+
+
+
+
+
+***Q14 - Referencing***
+
+db.host.aggregate( [
+	{ $project: { _id: 0, host_id: 1, host_name: 1, "number of verification methods": { $size: "$host_verifications" } } },
+	{ $sort: { "number of verification methods": -1 } }
+] ).pretty();
+
+
+***Q14 - Embedding***
+
+db.listing_host.aggregate( [
+	{ $unwind: "$hostDocs" },
+	{ $project: { _id: 0, host_id: 1, "hostDocs.host_name": 1, "number of verification methods": { $size: "$hostDocs.host_verifications" } } },
+	{ $sort: { "number of verification methods": -1 } }
+] ).pretty();
+
+
+
+
+***ADDITIONAL QUERIES***
+
+***Query 1***
+
+Display the host's ID, host's name and the name of those listings that are located in Fitzroy and has Yarra as the neighbourhood.
+
+db.listing_host.aggregate( [
+  { $match: { $and: [ { neighbourhood: "Yarra" }, {street: { $regex: "Fitzroy" } } ] } },
+  { $project: { _id: 0, "hostDocs.host_id": 1, "hostDocs.host_name": 1, name: 1, street: 1, neighbourhood: 1 } }
+] ).pretty();
+
+
+---OR---
+
+
+db.listing.aggregate( [
+	{ $lookup : { from : "host", localField : "host_id", foreignField : "host_id", as : "hostDocs" } },
+	{ $match: { $and: [ { neighbourhood: "Yarra" }, {street: { $regex: "Fitzroy" } } ] } },
+	{ $project: { _id: 0, "hostDocs.host_id": 1, "hostDocs.host_name": 1, name: 1, street: 1, neighbourhood: 1 } }
+] ).pretty();
+
+
+
+
+***Query 2***
+
+Display the first three verifications for those hosts who respond within an hour or within a few hours and sort them by host name in ascending order.
+
+db.host.aggregate( [
+  { $match: { $or: [ { host_response_time: "within an hour" }, { host_response_time: "within a few hours" } ] } },
+  { $project: { _id: 0, host_name: 1, threeVerifications: { $slice: [ "$host_verifications", 3 ] }, host_response_time: 1 } },
+  { $sort: { host_name: 1 } }
+] ).pretty();
+
+
+
+
+***Query 3***
+
+Find the top 5 listings along with their neighbourhoods with the most reviewed accomodations that were last reviewed after 10th January 2019.
+
+db.listing.aggregate( [
+  { $match: { last_review: { $gt: new Date("2019-01-10") } } },
+  { $project: {_id: 0, listingID: "$id", listingName: "$name", neighbourhood: "$neighbourhood", numberOfReviews: "$number_of_reviews", lastReviewDate: "$last_review" } },
+  { $sort: { numberOfReviews: -1 } },
+  { $limit : 5 }
+] ).pretty();
